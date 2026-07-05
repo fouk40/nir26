@@ -26,22 +26,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get("/balance/{user_id}")
-async def get_balance(
-        user_id: int,
-        db: asyncpg.Connection = Depends(get_db),
-        cache: aioredis.Redis = Depends(get_redis)
-):
-    cached_balance = await cache.get(f"user:{user_id}:balance")
-    if cached_balance is not None:
-        return int(cached_balance)
-
-    balance = await db.fetchval("SELECT balance FROM users WHERE id = $1", user_id)
-
-    await cache.set(f"user:{user_id}:balance", balance, ex=600)
-    return balance
-
-
 @app.post("/balance/dual-write")
 async def dual_write(
         user_id: int,
